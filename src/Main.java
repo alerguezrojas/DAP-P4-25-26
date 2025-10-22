@@ -7,4 +7,5 @@ public class Main {
         TrafficLightContext context = new TrafficLightContext(gui);
         context.run();
     }
+
 }
