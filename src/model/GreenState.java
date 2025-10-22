@@ -1,32 +1,49 @@
+// model/GreenState.java
 package model;
 
 import controller.TrafficLightContext;
 
 public class GreenState implements TrafficLightState {
+    private static final int BLINK_SECONDS = 3;
+    private static final int BLINK_INTERVAL_MS = 200; // parpadeo más rápido
 
     @Override
-    public void handle(TrafficLightContext context) {
+    public void handle(TrafficLightContext context) throws InterruptedException {
         context.getGui().setLightColor("GREEN");
-        context.getGui().setSound("🟢 Sonido: paso permitido (tono agudo cada 2s)");
+        int duration = context.getGui().getGreenTime();
 
-        // Fase verde estable
-        try {
-            for (int i = 0; i < 7; i++) {
-                Thread.sleep(1000);
-                System.out.println("⏱️ Semáforo verde: " + (10 - i) + "s restantes");
-            }
+        // Fase verde estable antes del parpadeo
+        int stable = Math.max(0, duration - BLINK_SECONDS);
+        context.getGui().updateTimer("Green: " + duration + "s");
+        context.getSound().patternGreenStable(stable);
 
-            // Parpadeo rápido (3 segundos)
-            for (int i = 0; i < 3; i++) {
-                context.getGui().toggleGreenBlink();
-                context.getGui().setSound("⚡ Sonido rápido (1 beep/0.3s)");
-                Thread.sleep(500);
-            }
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+        for (int i = 0; i < stable && context.isRunning(); i++) {
+            Thread.sleep(1000);
+            context.getGui().updateTimer("Green: " + (duration - i - 1) + "s");
         }
 
+        // Fase de parpadeo rápido con contador descendente 3 → 2 → 1
+        long end = System.currentTimeMillis() + BLINK_SECONDS * 1000L;
+        context.getSound().patternGreenBlink(BLINK_SECONDS * 1000);
+
+        int lastShown = -1;
+        while (context.isRunning() && System.currentTimeMillis() < end) {
+            long remainingMs = end - System.currentTimeMillis();
+            int secs = (int) Math.ceil(remainingMs / 1000.0);
+
+            if (secs != lastShown) {
+                context.getGui().updateTimer("Green: " + secs + "s");
+                lastShown = secs;
+            }
+
+            context.getGui().toggleGreenBlink();
+            Thread.sleep(BLINK_INTERVAL_MS);
+        }
+
+        // Asegura luz verde encendida al terminar el parpadeo
+        context.getGui().setLightColor("GREEN");
+
+        // Siguiente estado
         context.setState(new RedState());
     }
 
