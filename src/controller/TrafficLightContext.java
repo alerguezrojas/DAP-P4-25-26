@@ -69,7 +69,7 @@ public class TrafficLightContext {
     }
 
     /**
-     * Reinicia el semáforo al estado inicial (rojo), deteniendo todo.
+     * Reinicia el semáforo al estado inicial (rojo), deteniendo cualquier actividad en curso.
      */
     public void reset() {
         stop();
