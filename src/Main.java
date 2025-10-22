@@ -1,6 +1,4 @@
 // Main.java
-package semaforo;
-
 import controller.TrafficLightContext;
 import sound.ToneSoundService;
 import view.TrafficLightGUI;
