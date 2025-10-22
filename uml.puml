@@ -1,0 +1,105 @@
+@startuml
+class sound.ToneSoundService {
+- boolean running
+- boolean muted
++ void setMuted(boolean)
++ boolean isMuted()
++ void beep(int,int,float)
++ void patternRed(int)
++ void patternAmber(int)
++ void patternGreenStable(int)
++ void patternGreenBlink(int)
++ void stopAll()
+- void runPattern(int,int,int,int,float)
+- void playTone(int,int,float)
+- {static} float clamp(float)
+- {static} void sleep(long)
+}
+
+
+interface model.TrafficLightState {
+~ void handle(TrafficLightContext)
+~ String getColor()
+}
+
+class model.GreenState {
+- {static} int BLINK_SECONDS
+- {static} int BLINK_INTERVAL_MS
++ void handle(TrafficLightContext)
++ String getColor()
+}
+
+
+interface sound.SoundService {
+~ void beep(int,int,float)
+~ void patternRed(int)
+~ void patternAmber(int)
+~ void patternGreenStable(int)
+~ void patternGreenBlink(int)
+~ void stopAll()
+~ void setMuted(boolean)
+~ boolean isMuted()
+}
+
+class controller.TrafficLightContext {
+- TrafficLightState currentState
+- TrafficLightGUI gui
+- SoundService sound
+- boolean running
+- Thread worker
++ void setState(TrafficLightState)
++ boolean isRunning()
++ TrafficLightGUI getGui()
++ SoundService getSound()
++ void start()
++ void stop()
++ void reset()
+}
+
+
+class model.AmberState {
++ void handle(TrafficLightContext)
++ String getColor()
+}
+
+class Main {
++ {static} void main(String[])
+}
+
+class view.TrafficLightGUI {
+- JPanel redLight
+- JPanel amberLight
+- JPanel greenLight
+- JLabel statusLabel
+- JButton startButton
+- JButton stopButton
+- JButton resetButton
+- JCheckBox muteCheck
+- JSlider speedSlider
++ JButton getStartButton()
++ JButton getStopButton()
++ JButton getResetButton()
++ JCheckBox getMuteCheck()
++ int getRedTime()
++ int getAmberTime()
++ int getGreenTime()
+- int getSpeedMultiplier()
++ void setLightColor(String)
++ void toggleGreenBlink()
++ void updateTimer(String)
+}
+
+
+class model.RedState {
++ void handle(TrafficLightContext)
++ String getColor()
+}
+
+
+
+sound.SoundService <|.. sound.ToneSoundService
+model.TrafficLightState <|.. model.GreenState
+model.TrafficLightState <|.. model.AmberState
+view.JFrame <|-- view.TrafficLightGUI
+model.TrafficLightState <|.. model.RedState
+@enduml
