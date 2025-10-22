@@ -7,12 +7,12 @@ public class RedState implements TrafficLightState {
     public void handle(TrafficLightContext context) throws InterruptedException {
         context.getGui().setLightColor("RED");
         int duration = context.getGui().getRedTime();
-        context.getGui().updateTimer("Red: " + duration + "s");
+        context.getGui().updateTimer("Rojo: " + duration + "s");
         context.getSound().patternRed(duration);
 
         for (int i = 0; i < duration && context.isRunning(); i++) {
             Thread.sleep(1000);
-            context.getGui().updateTimer("Red: " + (duration - i - 1) + "s");
+            context.getGui().updateTimer("Rojo: " + (duration - i - 1) + "s");
         }
         context.setState(new AmberState());
     }

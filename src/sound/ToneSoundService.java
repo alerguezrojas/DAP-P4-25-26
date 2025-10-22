@@ -1,32 +1,44 @@
+// sound/ToneSoundService.java
 package sound;
 
 import javax.sound.sampled.*;
 
 public class ToneSoundService implements SoundService {
     private volatile boolean running = true;
+    private volatile boolean muted = false;
+
+    @Override
+    public void setMuted(boolean muted) { this.muted = muted; }
+    @Override
+    public boolean isMuted() { return muted; }
 
     @Override
     public void beep(int frequencyHz, int durationMs, float volume) {
+        if (muted) return;
         new Thread(() -> playTone(frequencyHz, durationMs, volume)).start();
     }
 
     @Override
     public void patternRed(int totalSeconds) {
+        if (muted) return;
         runPattern(totalSeconds, 2000, 440, 150, 0.7f);
     }
 
     @Override
     public void patternAmber(int totalSeconds) {
+        if (muted) return;
         runPattern(totalSeconds, 1000, 700, 120, 0.7f);
     }
 
     @Override
     public void patternGreenStable(int totalSeconds) {
+        if (muted) return;
         runPattern(totalSeconds, 2000, 880, 120, 0.8f);
     }
 
     @Override
     public void patternGreenBlink(int totalMs) {
+        if (muted) return;
         running = true;
         new Thread(() -> {
             long end = System.currentTimeMillis() + totalMs;
@@ -38,18 +50,15 @@ public class ToneSoundService implements SoundService {
     }
 
     @Override
-    public void stopAll() {
-        running = false;
-    }
+    public void stopAll() { running = false; }
 
-    // ================== Internos ==================
-
+    // ---------- Internos ----------
     private void runPattern(int totalSeconds, int intervalMs, int freq, int beepMs, float volume) {
         running = true;
         new Thread(() -> {
             long end = System.currentTimeMillis() + totalSeconds * 1000L;
             while (running && System.currentTimeMillis() < end) {
-                playTone(freq, beepMs, volume);
+                if (!muted) playTone(freq, beepMs, volume);
                 sleep(intervalMs);
             }
         }).start();
@@ -77,11 +86,6 @@ public class ToneSoundService implements SoundService {
         } catch (Exception ignored) {}
     }
 
-    private static float clamp(float v) {
-        return Math.max(0f, Math.min(1f, v));
-    }
-
-    private static void sleep(long ms) {
-        try { Thread.sleep(ms); } catch (InterruptedException ignored) {}
-    }
+    private static float clamp(float v) { return Math.max(0f, Math.min(1f, v)); }
+    private static void sleep(long ms) { try { Thread.sleep(ms); } catch (InterruptedException ignored) {} }
 }

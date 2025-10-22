@@ -1,3 +1,4 @@
+// controller/TrafficLightContext.java
 package controller;
 
 import model.*;
@@ -33,6 +34,9 @@ public class TrafficLightContext {
         return sound;
     }
 
+    /**
+     * Inicia el ciclo del semáforo en un hilo independiente.
+     */
     public void start() {
         if (running) return;
         running = true;
@@ -41,6 +45,8 @@ public class TrafficLightContext {
         worker = new Thread(() -> {
             while (running) {
                 try {
+                    // Actualiza el estado de "mute" dinámicamente
+                    sound.setMuted(gui.getMuteCheck().isSelected());
                     currentState.handle(this);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
@@ -51,9 +57,24 @@ public class TrafficLightContext {
         worker.start();
     }
 
+    /**
+     * Detiene el ciclo del semáforo y todos los sonidos activos.
+     */
     public void stop() {
         running = false;
         sound.stopAll();
-        if (worker != null) worker.interrupt();
+        if (worker != null) {
+            worker.interrupt();
+        }
+    }
+
+    /**
+     * Reinicia el semáforo al estado inicial (rojo), deteniendo todo.
+     */
+    public void reset() {
+        stop();
+        gui.setLightColor("RED");
+        gui.updateTimer("Listo para iniciar");
+        currentState = new RedState();
     }
 }

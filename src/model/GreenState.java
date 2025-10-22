@@ -14,12 +14,12 @@ public class GreenState implements TrafficLightState {
 
         // Fase verde estable antes del parpadeo
         int stable = Math.max(0, duration - BLINK_SECONDS);
-        context.getGui().updateTimer("Green: " + duration + "s");
+        context.getGui().updateTimer("Verde: " + duration + "s");
         context.getSound().patternGreenStable(stable);
 
         for (int i = 0; i < stable && context.isRunning(); i++) {
             Thread.sleep(1000);
-            context.getGui().updateTimer("Green: " + (duration - i - 1) + "s");
+            context.getGui().updateTimer("Verde: " + (duration - i - 1) + "s");
         }
 
         // Fase de parpadeo rápido con contador descendente 3 → 2 → 1
@@ -32,7 +32,7 @@ public class GreenState implements TrafficLightState {
             int secs = (int) Math.ceil(remainingMs / 1000.0);
 
             if (secs != lastShown) {
-                context.getGui().updateTimer("Green: " + secs + "s");
+                context.getGui().updateTimer("Verde: " + secs + "s");
                 lastShown = secs;
             }
 

@@ -1,3 +1,4 @@
+// sound/SoundService.java
 package sound;
 
 public interface SoundService {
@@ -7,4 +8,8 @@ public interface SoundService {
     void patternGreenStable(int totalSeconds);
     void patternGreenBlink(int totalMs);
     void stopAll();
+
+    // NUEVO: soporte modo silencioso
+    void setMuted(boolean muted);
+    default boolean isMuted() { return false; } // opcional
 }
