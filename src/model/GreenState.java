@@ -5,50 +5,80 @@ import controller.TrafficLightContext;
 
 public class GreenState implements TrafficLightState {
     private static final int BLINK_SECONDS = 3;
-    private static final int BLINK_INTERVAL_MS = 200; // parpadeo más rápido
+    private static final int BLINK_STEP_MS = 200; // parpadeo rápido
 
     @Override
     public void handle(TrafficLightContext context) throws InterruptedException {
         context.getGui().setLightColor("GREEN");
-        int duration = context.getGui().getGreenTime();
 
-        // Fase verde estable antes del parpadeo
-        int stable = Math.max(0, duration - BLINK_SECONDS);
-        context.getGui().updateTimer("Verde: " + duration + "s");
-        context.getSound().patternGreenStable(stable);
+        int total = context.getGui().getGreenTime();
+        int stable = Math.max(0, total - BLINK_SECONDS);
 
-        for (int i = 0; i < stable && context.isRunning(); i++) {
-            Thread.sleep(1000);
-            context.getGui().updateTimer("Verde: " + (duration - i - 1) + "s");
+        // --- Fase verde estable ---
+        int remainingStable = stable;
+        if (remainingStable > 0) {
+            context.getSound().patternGreenStable(remainingStable);
         }
+        context.getGui().updateTimer("Green: " + (remainingStable + BLINK_SECONDS) + "s");
 
-        // Fase de parpadeo rápido con contador descendente 3 → 2 → 1
-        long end = System.currentTimeMillis() + BLINK_SECONDS * 1000L;
-        context.getSound().patternGreenBlink(BLINK_SECONDS * 1000);
+        while (remainingStable > 0 && context.isRunning()) {
+            waitIfPaused(context);
 
+            Thread.sleep(1000);
+            remainingStable--;
+            context.getGui().updateTimer("Green: " + (remainingStable + BLINK_SECONDS) + "s");
+
+            if (context.consumeResumeSignal() && remainingStable > 0) {
+                context.getSound().patternGreenStable(remainingStable);
+            }
+        }
+        if (!context.isRunning()) return;
+
+        // --- Fase de parpadeo 3s con contador 3→2→1 ---
+        int msRemaining = BLINK_SECONDS * 1000;
         int lastShown = -1;
-        while (context.isRunning() && System.currentTimeMillis() < end) {
-            long remainingMs = end - System.currentTimeMillis();
-            int secs = (int) Math.ceil(remainingMs / 1000.0);
 
+        // Lanzar beeps rápidos para toda la fase de parpadeo
+        context.getSound().patternGreenBlink(msRemaining);
+
+        while (msRemaining > 0 && context.isRunning()) {
+            waitIfPaused(context);
+
+            // Mostrar contador (ceil)
+            int secs = (int) Math.ceil(msRemaining / 1000.0);
             if (secs != lastShown) {
-                context.getGui().updateTimer("Verde: " + secs + "s");
+                context.getGui().updateTimer("Green (flashing): " + secs + "s");
                 lastShown = secs;
             }
 
+            // Toggle visual
             context.getGui().toggleGreenBlink();
-            Thread.sleep(BLINK_INTERVAL_MS);
+
+            // Avanzar "tiempo de trabajo"
+            int step = Math.min(BLINK_STEP_MS, msRemaining);
+            Thread.sleep(step);
+            msRemaining -= step;
+
+            // Si reanudamos desde pausa, relanzar beeps por el restante
+            if (context.consumeResumeSignal() && msRemaining > 0) {
+                context.getSound().patternGreenBlink(msRemaining);
+            }
         }
 
-        // Asegura luz verde encendida al terminar el parpadeo
+        // Asegurar luz verde encendida al terminar
         context.getGui().setLightColor("GREEN");
 
-        // Siguiente estado
+        if (!context.isRunning()) return;
         context.setState(new RedState());
     }
 
-    @Override
-    public String getColor() {
-        return "GREEN";
+    private void waitIfPaused(TrafficLightContext context) throws InterruptedException {
+        synchronized (context.getLock()) {
+            while (context.isPaused() && context.isRunning()) {
+                context.getLock().wait();
+            }
+        }
     }
+
+    @Override public String getColor() { return "GREEN"; }
 }

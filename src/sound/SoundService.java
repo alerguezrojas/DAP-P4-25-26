@@ -9,7 +9,7 @@ public interface SoundService {
     void patternGreenBlink(int totalMs);
     void stopAll();
 
-    // NUEVO: soporte modo silencioso
+    // Modo silencio
     void setMuted(boolean muted);
-    default boolean isMuted() { return false; } // opcional
+    default boolean isMuted() { return false; }
 }

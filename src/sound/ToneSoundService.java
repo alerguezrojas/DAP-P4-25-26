@@ -9,13 +9,14 @@ public class ToneSoundService implements SoundService {
 
     @Override
     public void setMuted(boolean muted) { this.muted = muted; }
+
     @Override
     public boolean isMuted() { return muted; }
 
     @Override
     public void beep(int frequencyHz, int durationMs, float volume) {
         if (muted) return;
-        new Thread(() -> playTone(frequencyHz, durationMs, volume)).start();
+        new Thread(() -> playTone(frequencyHz, durationMs, volume), "Tone-Beep").start();
     }
 
     @Override
@@ -43,16 +44,19 @@ public class ToneSoundService implements SoundService {
         new Thread(() -> {
             long end = System.currentTimeMillis() + totalMs;
             while (running && System.currentTimeMillis() < end) {
-                playTone(1200, 120, 0.9f);
+                if (!muted) playTone(1200, 120, 0.9f);
                 sleep(300);
             }
-        }).start();
+        }, "Tone-Blink").start();
     }
 
     @Override
-    public void stopAll() { running = false; }
+    public void stopAll() {
+        running = false; // haría que los patrones salgan en su siguiente ciclo
+    }
 
-    // ---------- Internos ----------
+    // ================== Internos ==================
+
     private void runPattern(int totalSeconds, int intervalMs, int freq, int beepMs, float volume) {
         running = true;
         new Thread(() -> {
@@ -61,18 +65,18 @@ public class ToneSoundService implements SoundService {
                 if (!muted) playTone(freq, beepMs, volume);
                 sleep(intervalMs);
             }
-        }).start();
+        }, "Tone-Pattern-" + freq).start();
     }
 
     private void playTone(int freq, int ms, float volume) {
         try {
             float sampleRate = 44100f;
-            byte[] buf = new byte[(int)(ms * sampleRate / 1000) * 2];
+            byte[] buf = new byte[(int)(ms * sampleRate / 1000) * 2]; // 16-bit mono
             double twoPiF = 2 * Math.PI * freq;
             for (int i = 0, sample = 0; i < buf.length; i += 2, sample++) {
                 double t = sample / sampleRate;
                 short val = (short) (Math.sin(twoPiF * t) * 32767 * clamp(volume));
-                buf[i] = (byte) (val & 0xff);
+                buf[i]     = (byte) (val & 0xff);
                 buf[i + 1] = (byte) ((val >> 8) & 0xff);
             }
             AudioFormat af = new AudioFormat(sampleRate, 16, 1, true, false);

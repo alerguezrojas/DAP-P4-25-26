@@ -1,3 +1,4 @@
+// model/TrafficLightState.java
 package model;
 
 import controller.TrafficLightContext;
