@@ -13,7 +13,7 @@ public class RedState implements TrafficLightState {
 
         // Lanzar sonido para toda la fase al inicio
         context.getSound().patternRed(remaining);
-        context.getGui().updateTimer("⏱️ Rojo: " + remaining + "s");
+        context.getGui().updateTimer("Red: " + remaining + "s");
 
         while (remaining > 0 && context.isRunning()) {
             // Pausa cooperativa
@@ -22,7 +22,7 @@ public class RedState implements TrafficLightState {
             // Esperar 1 segundo de trabajo
             Thread.sleep(1000);
             remaining--;
-            context.getGui().updateTimer("⏱️ Rojo: " + remaining + "s");
+            context.getGui().updateTimer("Red: " + remaining + "s");
 
             // Si venimos de reanudar, relanzar audio con el tiempo restante
             if (context.consumeResumeSignal() && remaining > 0) {
