@@ -24,8 +24,9 @@ interface model.TrafficLightState {
 
 class model.GreenState {
 - {static} int BLINK_SECONDS
-- {static} int BLINK_INTERVAL_MS
+- {static} int BLINK_STEP_MS
 + void handle(TrafficLightContext)
+- void waitIfPaused(TrafficLightContext)
 + String getColor()
 }
 
@@ -46,11 +47,17 @@ class controller.TrafficLightContext {
 - TrafficLightGUI gui
 - SoundService sound
 - boolean running
+- boolean paused
+- boolean resumeSignal
+- Object lock
 - Thread worker
 + void setState(TrafficLightState)
 + boolean isRunning()
++ boolean isPaused()
 + TrafficLightGUI getGui()
 + SoundService getSound()
++ Object getLock()
++ boolean consumeResumeSignal()
 + void start()
 + void stop()
 + void reset()
@@ -59,6 +66,7 @@ class controller.TrafficLightContext {
 
 class model.AmberState {
 + void handle(TrafficLightContext)
+- void waitIfPaused(TrafficLightContext)
 + String getColor()
 }
 
@@ -92,6 +100,7 @@ class view.TrafficLightGUI {
 
 class model.RedState {
 + void handle(TrafficLightContext)
+- void waitIfPaused(TrafficLightContext)
 + String getColor()
 }
 
