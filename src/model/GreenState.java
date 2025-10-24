@@ -15,13 +15,15 @@ public class GreenState implements TrafficLightState {
         int stable = Math.max(0, total - BLINK_SECONDS);
         int remainingStable = stable;
 
-        if (remainingStable > 0)
+        context.getSound().stopAll(); // 🔇
+        if (remainingStable > 0) {
             context.getSound().patternGreenStable(remainingStable);
+        }
         context.getGui().updateTimer("Verde: " + (remainingStable + BLINK_SECONDS) + "s");
 
+        // Fase estable
         while (remainingStable > 0 && context.isRunning()) {
             waitIfPaused(context);
-
             Thread.sleep(1000);
             remainingStable--;
             context.getGui().updateTimer("Verde: " + (remainingStable + BLINK_SECONDS) + "s");
@@ -35,18 +37,19 @@ public class GreenState implements TrafficLightState {
                 return;
             }
         }
-
         if (!context.isRunning()) return;
 
-        // --- Parpadeo final ---
+        // Fase parpadeo
         int msRemaining = BLINK_SECONDS * 1000;
         int lastShown = -1;
+
+        context.getSound().stopAll(); // 🔇
         context.getSound().patternGreenBlink(msRemaining);
 
         while (msRemaining > 0 && context.isRunning()) {
             waitIfPaused(context);
 
-            int secs = (int) Math.ceil(msRemaining / 1000.0);
+            int secs = (int)Math.ceil(msRemaining / 1000.0);
             if (secs != lastShown) {
                 context.getGui().updateTimer("Verde (parpadeo): " + secs + "s");
                 lastShown = secs;

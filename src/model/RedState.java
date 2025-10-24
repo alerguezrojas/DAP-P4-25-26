@@ -10,12 +10,13 @@ public class RedState implements TrafficLightState {
 
         int total = context.getGui().getRedTime();
         int remaining = total;
+
+        context.getSound().stopAll();            // 🔇 corta patrón previo
         context.getSound().patternRed(remaining);
         context.getGui().updateTimer("Rojo: " + remaining + "s");
 
         while (remaining > 0 && context.isRunning()) {
             waitIfPaused(context);
-
             Thread.sleep(1000);
             remaining--;
             context.getGui().updateTimer("Rojo: " + remaining + "s");
@@ -23,7 +24,6 @@ public class RedState implements TrafficLightState {
             if (context.consumeResumeSignal() && remaining > 0)
                 context.getSound().patternRed(remaining);
 
-            // 🔵 Posible transición ecológica
             if (context.shouldGoEco()) {
                 context.setPreviousState(this);
                 context.setState(new BlueState());

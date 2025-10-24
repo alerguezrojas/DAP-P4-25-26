@@ -3,30 +3,24 @@ package model;
 
 import controller.TrafficLightContext;
 
-/**
- * Estado azul ecológico.
- * Indica que los vehículos deben apagar el motor temporalmente.
- * Dura entre 3 y 6 segundos y devuelve al estado anterior al finalizar.
- */
 public class BlueState implements TrafficLightState {
     @Override
     public void handle(TrafficLightContext context) throws InterruptedException {
+        context.setEcoActive(true);             // estamos en ECO
         context.getGui().setLightColor("BLUE");
 
-        int duration = 3 + (int)(Math.random() * 4); // entre 3 y 6 s
+        int duration = 3 + (int)(Math.random() * 4); // 3..6 s
         int remaining = duration;
 
-        // 🚫 Detener sonidos previos para evitar solapamiento
-        context.getSound().stopAll();
+        context.getSound().stopAll();           // 🔇 corta patrón previo
         context.getSound().patternBlue(duration);
-
-        context.getGui().updateTimer("🌱 Azul ecológico: " + remaining + "s");
+        context.getGui().updateTimer("Azul ecológico: " + remaining + "s");
 
         while (remaining > 0 && context.isRunning()) {
             waitIfPaused(context);
             Thread.sleep(1000);
             remaining--;
-            context.getGui().updateTimer("🌱 Azul ecológico: " + remaining + "s");
+            context.getGui().updateTimer("Azul ecológico: " + remaining + "s");
 
             if (context.consumeResumeSignal() && remaining > 0)
                 context.getSound().patternBlue(remaining);
@@ -34,12 +28,16 @@ public class BlueState implements TrafficLightState {
 
         if (!context.isRunning()) return;
 
-        // Retornar al color anterior (el que estaba antes de la parada ecológica)
+        // salimos de ECO y activamos cooldown para evitar bucles
+        context.setEcoActive(false);
+        context.startEcoCooldown();
+
         TrafficLightState prev = context.getPreviousState();
-        if (prev != null)
+        if (prev != null) {
             context.setState(prev);
-        else
+        } else {
             context.setState(new RedState());
+        }
     }
 
     private void waitIfPaused(TrafficLightContext context) throws InterruptedException {
