@@ -20,7 +20,7 @@ public class AmberState implements TrafficLightState {
             Thread.sleep(1000);
             remaining--;
             context.getGui().updateTimer("Ámbar: " + remaining + "s");
-
+            // Reiniciar patrón si se ha reanudado cuando quedaba tiempo cuando se pausó
             if (context.consumeResumeSignal() && remaining > 0)
                 context.getSound().patternAmber(remaining);
 
