@@ -5,8 +5,11 @@ import model.*;
 import sound.SoundService;
 import view.TrafficLightGUI;
 
+import java.util.Random;
+
 public class TrafficLightContext {
     private TrafficLightState currentState;
+    private TrafficLightState previousState; // para volver tras azul
     private final TrafficLightGUI gui;
     private final SoundService sound;
 
@@ -16,6 +19,7 @@ public class TrafficLightContext {
 
     private final Object lock = new Object();
     private Thread worker;
+    private final Random random = new Random();
 
     public TrafficLightContext(TrafficLightGUI gui, SoundService sound) {
         this.gui = gui;
@@ -23,9 +27,10 @@ public class TrafficLightContext {
         this.currentState = new RedState();
     }
 
-    public void setState(TrafficLightState state) {
-        this.currentState = state;
-    }
+    public void setState(TrafficLightState state) { this.currentState = state; }
+    public TrafficLightState getCurrentState() { return currentState; }
+    public TrafficLightState getPreviousState() { return previousState; }
+    public void setPreviousState(TrafficLightState prev) { this.previousState = prev; }
 
     public boolean isRunning() { return running; }
     public boolean isPaused()  { return paused;  }
@@ -33,10 +38,6 @@ public class TrafficLightContext {
     public SoundService getSound()  { return sound; }
     public Object getLock()         { return lock; }
 
-    /**
-     * Señal que consumen los estados para relanzar el patrón de audio
-     * tras reanudar una pausa.
-     */
     public boolean consumeResumeSignal() {
         synchronized (lock) {
             if (resumeSignal) {
@@ -47,13 +48,14 @@ public class TrafficLightContext {
         }
     }
 
-    /**
-     * Iniciar o reanudar.
-     */
+    /** Devuelve true con baja probabilidad (~10%) para activar el azul. */
+    public boolean shouldGoEco() {
+        return random.nextInt(10) == 0; // 10% de probabilidad
+    }
+
     public void start() {
         synchronized (lock) {
             if (!running) {
-                // Arrancar hilo de ciclo
                 running = true;
                 paused  = false;
                 worker = new Thread(() -> {
@@ -68,29 +70,21 @@ public class TrafficLightContext {
                 }, "TrafficLight-Worker");
                 worker.start();
             } else if (paused) {
-                // Reanudar
                 paused = false;
-                resumeSignal = true; // para relanzar sonido acorde al tiempo restante
+                resumeSignal = true;
                 lock.notifyAll();
             }
         }
     }
 
-    /**
-     * Pausar (no destruye el hilo ni reinicia el estado).
-     */
     public void stop() {
         synchronized (lock) {
             if (!running || paused) return;
             paused = true;
-            // Cortar audio inmediatamente
             sound.stopAll();
         }
     }
 
-    /**
-     * Reset total: para, limpia GUI y vuelve a rojo.
-     */
     public void reset() {
         synchronized (lock) {
             running = false;

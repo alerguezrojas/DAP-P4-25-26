@@ -7,9 +7,8 @@ public interface SoundService {
     void patternAmber(int totalSeconds);
     void patternGreenStable(int totalSeconds);
     void patternGreenBlink(int totalMs);
+    void patternBlue(int totalSeconds); // nuevo sonido ecológico
     void stopAll();
-
-    // Modo silencio
     void setMuted(boolean muted);
-    default boolean isMuted() { return false; }
+    boolean isMuted();
 }

@@ -10,19 +10,24 @@ public class AmberState implements TrafficLightState {
 
         int total = context.getGui().getAmberTime();
         int remaining = total;
-
         context.getSound().patternAmber(remaining);
-        context.getGui().updateTimer("Amber: " + remaining + "s");
+        context.getGui().updateTimer("Ámbar: " + remaining + "s");
 
         while (remaining > 0 && context.isRunning()) {
             waitIfPaused(context);
 
             Thread.sleep(1000);
             remaining--;
-            context.getGui().updateTimer("Amber: " + remaining + "s");
+            context.getGui().updateTimer("Ámbar: " + remaining + "s");
 
-            if (context.consumeResumeSignal() && remaining > 0) {
+            if (context.consumeResumeSignal() && remaining > 0)
                 context.getSound().patternAmber(remaining);
+
+            // 🔵 Posible parada ecológica
+            if (context.shouldGoEco()) {
+                context.setPreviousState(this);
+                context.setState(new BlueState());
+                return;
             }
         }
 
@@ -32,9 +37,8 @@ public class AmberState implements TrafficLightState {
 
     private void waitIfPaused(TrafficLightContext context) throws InterruptedException {
         synchronized (context.getLock()) {
-            while (context.isPaused() && context.isRunning()) {
+            while (context.isPaused() && context.isRunning())
                 context.getLock().wait();
-            }
         }
     }
 

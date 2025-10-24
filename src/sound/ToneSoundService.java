@@ -7,11 +7,8 @@ public class ToneSoundService implements SoundService {
     private volatile boolean running = true;
     private volatile boolean muted = false;
 
-    @Override
-    public void setMuted(boolean muted) { this.muted = muted; }
-
-    @Override
-    public boolean isMuted() { return muted; }
+    @Override public void setMuted(boolean muted) { this.muted = muted; }
+    @Override public boolean isMuted() { return muted; }
 
     @Override
     public void beep(int frequencyHz, int durationMs, float volume) {
@@ -51,11 +48,22 @@ public class ToneSoundService implements SoundService {
     }
 
     @Override
-    public void stopAll() {
-        running = false; // haría que los patrones salgan en su siguiente ciclo
+    public void patternBlue(int totalSeconds) {
+        if (muted) return;
+        running = true;
+        new Thread(() -> {
+            long end = System.currentTimeMillis() + totalSeconds * 1000L;
+            while (running && System.currentTimeMillis() < end) {
+                if (!muted) playTone(500, 300, 0.4f); // tono más suave
+                sleep(1000);
+            }
+        }, "Tone-BlueEco").start();
     }
 
-    // ================== Internos ==================
+    @Override
+    public void stopAll() { running = false; }
+
+    // ==== Internos ====
 
     private void runPattern(int totalSeconds, int intervalMs, int freq, int beepMs, float volume) {
         running = true;
@@ -71,7 +79,7 @@ public class ToneSoundService implements SoundService {
     private void playTone(int freq, int ms, float volume) {
         try {
             float sampleRate = 44100f;
-            byte[] buf = new byte[(int)(ms * sampleRate / 1000) * 2]; // 16-bit mono
+            byte[] buf = new byte[(int)(ms * sampleRate / 1000) * 2];
             double twoPiF = 2 * Math.PI * freq;
             for (int i = 0, sample = 0; i < buf.length; i += 2, sample++) {
                 double t = sample / sampleRate;
